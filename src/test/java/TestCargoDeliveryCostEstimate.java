@@ -20,6 +20,7 @@ class TestCargoDeliveryCostEstimate {
     private static final double ALLOWED_COST_DELTA = 0.0001; // Допустимое отклонение цены при расчётах стоимости
     private static final double LONG_DISTANCE = 30.00; // Максимально допустимое расстояние перевозки хрупкого груза
     private CargoDeliveryCostEstimate estimate;
+    private String testFailMessage;
 
     @BeforeEach
     void init() {
@@ -36,7 +37,9 @@ class TestCargoDeliveryCostEstimate {
             throws TooLongDistanceForFragileCargoException, NegativeOrZeroDistanceException {
         double fullDeliveryCost = estimate.getDeliveryFullCost(deliveryDistance, cargoDimension,
                 isCargoFragile, deliveryServiceLoad);
-        Assertions.assertEquals(expectedDeliveryFullCost, fullDeliveryCost, ALLOWED_COST_DELTA);
+        testFailMessage = String.format("Проверьте расчёт стомости доставки для введенных параметров." +
+                "\nОжидаемое значение: %s\nВаше значение: %s", expectedDeliveryFullCost, fullDeliveryCost);
+        Assertions.assertEquals(expectedDeliveryFullCost, fullDeliveryCost, ALLOWED_COST_DELTA, testFailMessage);
     }
 
     @Test
@@ -64,7 +67,9 @@ class TestCargoDeliveryCostEstimate {
                 () -> estimate.getDeliveryFullCost(deliveryDistance, cargoDimension,
                         isCargoFragile, deliveryServiceLoad)
         );
-        Assertions.assertTrue(exception.getMessage().contains(exceptionMessage));
+        testFailMessage = "При расчёте стомости доставки необходимо исключить возможность ввода " +
+                "нулевого или отрицательного значения расстояния доставки";
+        Assertions.assertTrue(exception.getMessage().contains(exceptionMessage), testFailMessage);
     }
 
     @ParameterizedTest
@@ -72,16 +77,18 @@ class TestCargoDeliveryCostEstimate {
     @DisplayName("Негативный сценарий тестирования. " +
             "Выброс исключения для сценария перевозки хрупкого груза на расстояние более 30 км.")
     void TestNegativeGetDeliveryFullCostWithFragileCargoAndLongDistanceThrowsException(double deliveryDistance,
-                                                                           CargoDimension cargoDimension,
-                                                                           boolean isCargoFragile,
-                                                                           DeliveryServiceLoad deliveryServiceLoad) {
+                                                                                       CargoDimension cargoDimension,
+                                                                                       boolean isCargoFragile,
+                                                                                       DeliveryServiceLoad deliveryServiceLoad) {
         String exceptionMessage = "К сожалению, хрупкие грузы не перевозятся на большие расстояния";
         TooLongDistanceForFragileCargoException exception = Assertions.assertThrows(
                 TooLongDistanceForFragileCargoException.class,
                 () -> estimate.getDeliveryFullCost(deliveryDistance, cargoDimension,
                         isCargoFragile, deliveryServiceLoad)
         );
-        Assertions.assertTrue(exception.getMessage().contains(exceptionMessage));
+        testFailMessage = "Проверьте расчёт стоимости доставки хрупких грузов. " +
+                "Их нельзя перевозить на расстояния более 30 км.";
+        Assertions.assertTrue(exception.getMessage().contains(exceptionMessage), testFailMessage);
     }
 
     static Stream<Arguments> testDeliveryDataListForPositiveTest() {
